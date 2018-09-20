@@ -1,0 +1,50 @@
+.item{
+    width: 58px;
+    height: 58px;
+    outline: 1px solid #ccc;
+    float: left;
+    text-align: center;
+    line-height: 58px;
+    background: #fff;
+    text-decoration: none;
+    font-size:2em;
+    color: #777;
+    text-shadow: 1px 1px 2px #999;
+}
+
+.item:hover{
+    cursor: pointer;
+}
+
+.desk{
+    width: 174px;
+    height: 174px;
+    position: relative;
+    font: 1em Arial,sans-serif;
+        float: left;
+        margin-right:40px
+}
+
+.avoid-click, .pause{
+    pointer-events: none;
+}
+
+.win{
+    background: greenyellow;
+}
+
+.new-game{
+    cursor: pointer;
+}
+
+.stats{
+    outline: 1px solid #ccc;
+    float: left;
+    width: 150px;
+    height: 155px;
+    text-align: center;
+}
+
+.nav-right{
+    float: right;
+}

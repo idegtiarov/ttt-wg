@@ -1,0 +1,18 @@
+Django==2.1.1
+requests==2.19.1
+channels==2.0.2
+channels_redis==2.3.0
+django_redis==4.9.0
+psycopg2==2.7.5
+
+# locals test requirements
+selenium==3.14.0
+flake8==3.5.0
+tox==3.2.1
+pbr==4.2.0
+pytest==3.7.4
+pytest-django==3.4.2
+pytest-cov==2.6.0
+pytest-runner==4.2
+ddt==1.2.0
+

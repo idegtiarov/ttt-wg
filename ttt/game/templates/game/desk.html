@@ -1,0 +1,30 @@
+{% extends "game/base.html" %}
+{% load staticfiles %}
+
+{% block extra_scripts %}<script src="{% static 'game/js/game.js' %}"></script>{% endblock %}
+
+{% block content %}
+<div id="desk_id" class="desk" data-desk-name={{ desk_name_json }} data-latency={{ latency }}>
+    <span id="0" class="item"></span><span id="1" class="item"></span><span id="2" class="item"></span>
+    <span id="3" class="item"></span><span id="4" class="item"></span><span id="5" class="item"></span>
+    <span id="6" class="item"></span><span id="7" class="item"></span><span id="8" class="item"></span>
+</div>
+<div>
+    <div id="player" class="stats">
+        <p>Player <span id="me">{{ username }}</span></p>
+        <p>Wins <span class="wins">0</span></p>
+        <p>Losts <span class="losts">0</span></p>
+        <p>Draws <span class="draws">0</span></p>
+    </div>
+    <div id="enemy" class="stats">
+        <p>Player <span id="notme">Waiting for second Player</span></p>
+        <p>Wins <span class="wins">0</span></p>
+        <p>Losts <span class="losts">0</span></p>
+        <p>Draws <span class="draws">0</span></p>
+    </div>
+</div>
+<button id="new_game" class="new-game" hidden>
+Start new game
+</button>
+
+{% endblock content %}

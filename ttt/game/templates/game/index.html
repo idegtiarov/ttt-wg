@@ -1,0 +1,13 @@
+{% extends "game/base.html" %}
+{% load staticfiles %}
+
+{% block extra_scripts %}<script src="{% static 'game/js/enter.js' %}"></script>{% endblock %}
+
+{% block content %}
+
+    <div id="enter" data-latency={{ latency }}>
+        To Play the Tic-Tac-Toe game just push the button
+        <button id="play" data-url={{ url }} data-wait={{ wait }}>PLAY</button>
+    </div>
+
+{% endblock content %}
