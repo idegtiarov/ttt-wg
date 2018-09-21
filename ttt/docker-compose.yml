@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: bash -c "sleep 5 && python manage.py runserver 0.0.0.0:8008 --settings=config.settings"
+    command: bash -c "./play_dev_game.sh"
     volumes:
       - .:/ttt
     ports:

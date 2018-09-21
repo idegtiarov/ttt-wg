@@ -1,13 +1,17 @@
 from collections import defaultdict
+import json
 import random
 
 from channels.generic.websocket import AsyncWebsocketConsumer
-import json
 
 WINS = ((0, 1, 2), (3, 4, 5), (6, 7, 8), (0, 3, 6), (1, 4, 7), (2, 5, 8), (0, 4, 8), (2, 4, 6))
 
 
 class Gambling(object):
+    """
+    Data descriptor to share game steps between players.
+    """
+
     gambling = defaultdict(set)
 
     def __get__(self, obj, objtype):
@@ -18,6 +22,9 @@ class Gambling(object):
 
 
 class DeskConsumer(AsyncWebsocketConsumer):
+    """
+    Async websocket consumer for the player's desk.
+    """
 
     gambling = Gambling()
 
@@ -50,6 +57,7 @@ class DeskConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data=None):
         draw, ai_win = None, None
         data = json.loads(text_data)
+        # Handler for user'd hand shake
         if data.get("user"):
             await self.channel_layer.group_send(
                 self.desk_group_name,
@@ -57,11 +65,12 @@ class DeskConsumer(AsyncWebsocketConsumer):
                     'type': 'desk_message',
                     'user': data.get('user'),
                     'loop': data.get('loop'),
+                    'primary': data.get('primary'),
                 }
             )
             return
         username = self.scope["user"].username
-        print(f'Checking the scope {username}')
+        # Handler for the new game event
         if data.get('new_game'):
             self.gambling = defaultdict(set)
             await self.channel_layer.group_send(
@@ -72,7 +81,8 @@ class DeskConsumer(AsyncWebsocketConsumer):
                 }
             )
             return
-        enemy = data.get('enemy', False)
+        # Main game part
+        enemy = data.get('enemy', False)  # True/False corresponds to player/AI respectively.
         choice = data.get('id')
         player_set = self.gambling[username]
         player_set.add(int(data['id']))
@@ -82,8 +92,8 @@ class DeskConsumer(AsyncWebsocketConsumer):
             choice_list = list(
                 self.init_set - player_set - (second_player[0] if second_player else set())
             )
-            print(choice_list)
             if choice_list:
+                # AI decision block
                 if not enemy:
                     choice = None
                     for win in WINS:
@@ -96,7 +106,6 @@ class DeskConsumer(AsyncWebsocketConsumer):
                     ai_win = check_result(self.gambling['ai'], username)
             else:
                 draw = {'win': 'draw'}
-        print(self.gambling)
 
         # Send message to the group
         await self.channel_layer.group_send(
@@ -111,11 +120,16 @@ class DeskConsumer(AsyncWebsocketConsumer):
         )
 
     async def desk_message(self, event):
+        """
+        Messages sender.
+        """
         user = event.get('user')
         if user:
+            # handshake
             await self.send(text_data=json.dumps({
                 'user': user,
                 'loop': event.get('loop'),
+                'primary': event.get('primary'),
             }))
             return
         new_game = event.get('new_game')
@@ -127,7 +141,6 @@ class DeskConsumer(AsyncWebsocketConsumer):
 
         id = event['id']
 
-        # Send message to WebSocket
         await self.send(text_data=json.dumps({
             'id': id,
             'username': event.get('username'),
@@ -136,7 +149,14 @@ class DeskConsumer(AsyncWebsocketConsumer):
 
 
 def check_result(check_set, username, player=False):
+    """
+    Check whether player win.
 
+    :param check_set: set of player's moves
+    :param username: player name
+    :param player: boolean flag to switch between human and AI
+    :return: dict with the result
+    """
     for win in WINS:
         if check_set >= set(win):
             return {'win': True if player else False, 'player': username, 'ids': win}

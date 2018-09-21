@@ -208,4 +208,4 @@ for app in APPS_TO_LOG:
 LOGGING['loggers'].update(APP_LOGGERS)
 
 # Tic Tac Toe
-TTT_WAIT_TIME = 10  # Time in seconds to wait for the second player.
+TTT_WAIT_TIME = 5  # Time in seconds to wait for the second player.

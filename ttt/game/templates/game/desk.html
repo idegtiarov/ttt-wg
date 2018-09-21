@@ -26,5 +26,10 @@
 <button id="new_game" class="new-game" hidden>
 Start new game
 </button>
+<div class="nav-right">
+    <p id="stats" data-url={{ url }}>{{ username }}'s wins stats</p>
+    <p>With humans: <span id="enemy-stats">Wins: 0%; Losts: 0%; Draws: 0%</span></p>
+    <p>With AI: <span id="ai-stats">Wins: 0%; Losts: 0%; Draws: 0%</span></p>
+</div>
 
 {% endblock content %}

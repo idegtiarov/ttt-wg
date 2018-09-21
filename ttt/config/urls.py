@@ -17,20 +17,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
-from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 from django.views.generic import RedirectView
 
 from game.urls import urlpatterns as game
-
-# Add rest API dashboard in DEBUG mode
-from game.views import LoginGameView
+from game.views import login
 
 urlpatterns = [
-    path('login/', LoginGameView.as_view(), name='login'),
+    path('login/', login, name='login'),
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('game/', include(game)),
-    path('', login_required(RedirectView.as_view(pattern_name='game:index')), name='index'),
+    path('', RedirectView.as_view(pattern_name='game:index'), name='index'),
 
+    # Admin dashboard
     path('admin/', admin.site.urls)
 ]
