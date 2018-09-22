@@ -1,106 +1,86 @@
-from channels.testing import ChannelsLiveServerTestCase
-from selenium import webdriver
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.support.wait import WebDriverWait
+import json
+
+from ddt import data, ddt, unpack
+from django.contrib.auth.models import User
+from django.test import TestCase, override_settings
+from django.urls import reverse
 
 
-class DeskTests(ChannelsLiveServerTestCase):
-    serve_static = True  # emulate StaticLiveServerTestCase
+@ddt
+class DeskTests(TestCase):
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        try:
-            cls.driver = webdriver.Chrome()
-        except Exception:
-            super().tearDownClass()
-            raise
+        cls.user = User.objects.create(username='test')
+        cls.user.set_password('test')
+        cls.user.save()
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.driver.quit()
-        super().tearDownClass()
+    def setUp(self):
+        self.client.login(username='test', password='test')
 
-    def test_when_desk_message_posted_then_seen_by_everyone_in_the_same_room(self):
-        # raise Exception('We are here')
-        try:
-            self._enter_desk_room('room1')
+    def test_index_redirect_to_login(self):
+        self.client.logout()
+        response = self.client.get(reverse('game:index'))
+        self.assertRedirects(response, reverse('login') + '?next=/game/')
 
-            self._open_new_window()
-            self._enter_desk_room('room1')
+    def test_logined_user_redirected_to_game(self):
+        response = self.client.get(reverse('index'))
+        self.assertRedirects(response, reverse('game:index'))
 
-            self._switch_to_window(0)
-            self._post_message('hello')
-            WebDriverWait(self.driver, 2).until(
-                lambda _: 'hello' in self._desk_log_value,
-                'Message was not received by window 1 from window 1'
-            )
-            self._switch_to_window(1)
-            WebDriverWait(self.driver, 2).until(
-                lambda _: 'hello' in self._desk_log_value,
-                'Message was not received by window 2 from window 1'
-            )
-            self.assertTrue(
-                'hello' in self._desk_log_value,
-                'Message was received by window 2 from window 1'
-            )
-        finally:
-            self._close_all_new_windows()
+    def test_desk_required_authorization(self):
+        self.client.logout()
+        url = reverse('game:desk', args=['test_desk'])
+        response = self.client.get(url)
+        self.assertRedirects(response, reverse('login') + f'?next={url}')
 
-    def test_when_desk_message_posted_then_not_seen_by_anyone_in_different_room(self):
-        # raise Exception('We are here2')
-        try:
-            self._enter_desk_room('room_1')
+    def test_user_take_same_room(self):
+        response_one = json.loads(self.client.get(reverse('game:room_to_play')).content)
+        response_two = json.loads(self.client.get(reverse('game:room_to_play')).content)
+        self.assertEqual(response_one['room_id'], response_two['room_id'])
 
-            self._open_new_window()
-            self._enter_desk_room('room_2')
+    @override_settings(TTT_WAIT_TIME=0)
+    def test_user_take_different_rooms_if_TTT_WAIT_TIME_over(self):
+        response_one = json.loads(self.client.get(reverse('game:room_to_play')).content)
+        response_two = json.loads(self.client.get(reverse('game:room_to_play')).content)
+        self.assertNotEqual(response_one['room_id'], response_two['room_id'])
 
-            self._switch_to_window(0)
-            self._post_message('hello')
-            WebDriverWait(self.driver, 2).until(
-                lambda _: 'hello' in self._desk_log_value,
-                'Message was not received by window 1 from window 1'
-            )
+    def test_third_user_take_different_room(self):
+        response_one = json.loads(self.client.get(reverse('game:room_to_play')).content)
+        response_two = json.loads(self.client.get(reverse('game:room_to_play')).content)
+        response_three = json.loads(self.client.get(reverse('game:room_to_play')).content)
+        self.assertEqual(response_one['room_id'], response_two['room_id'])
+        self.assertNotEqual(response_one['room_id'], response_three['room_id'])
 
-            self._switch_to_window(1)
-            self._post_message('world')
-            WebDriverWait(self.driver, 2).until(
-                lambda _: 'world' in self._desk_log_value,
-                'Message was not received by window 2 from window 2'
-            )
-            self.assertTrue(
-                'hello' not in self._desk_log_value,
-                'Message was improperly received by window 2 from window 1'
-            )
-        finally:
-            self._close_all_new_windows()
-
-    # === Utility ===
-
-    def _enter_desk_room(self, room_name):
-        self.driver.get(self.live_server_url + '/')
-        ActionChains(self.driver).send_keys(room_name + '\n').perform()
-        WebDriverWait(self.driver, 2).until(
-            lambda _: room_name in self.driver.current_url
-        )
-
-    def _open_new_window(self):
-        self.driver.execute_script('window.open("about:blank", "_blank");')
-        self.driver.switch_to.window(self.driver.window_handles[-1])
-
-    def _close_all_new_windows(self):
-        while len(self.driver.window_handles) > 1:
-            self.driver.switch_to.window(self.driver.window_handles[-1])
-            self.driver.execute_script('window.close();')
-        if len(self.driver.window_handles) == 1:
-            self.driver.switch_to.window(self.driver.window_handles[0])
-
-    def _switch_to_window(self, window_index):
-        self.driver.switch_to.window(self.driver.window_handles[window_index])
-
-    def _post_message(self, message):
-        ActionChains(self.driver).send_keys(message + '\n').perform()
-
-    @property
-    def _desk_log_value(self):
-        return self.driver.find_element_by_css_selector('#desk-log').get_property('value')
+    @unpack
+    @data(
+        {'enemy': False, 'win': 1, 'lost': 0, 'draw': 0, 'expected': [(100, 0, 0), (0, 0, 0)]},
+        {'enemy': False, 'win': 0, 'lost': 1, 'draw': 0, 'expected': [(0, 100, 0), (0, 0, 0)]},
+        {'enemy': False, 'win': 0, 'lost': 0, 'draw': 1, 'expected': [(0, 0, 100), (0, 0, 0)]},
+        {'enemy': False, 'win': 1, 'lost': 1, 'draw': 1, 'expected': [(33, 33, 33), (0, 0, 0)]},
+        {'enemy': False, 'win': 10, 'lost': 5, 'draw': 5, 'expected': [(50, 25, 25), (0, 0, 0)]},
+        {'enemy': True, 'win': 1, 'lost': 0, 'draw': 0, 'expected': [(0, 0, 0), (100, 0, 0)]},
+        {'enemy': True, 'win': 0, 'lost': 1, 'draw': 0, 'expected': [(0, 0, 0), (0, 100, 0)]},
+        {'enemy': True, 'win': 0, 'lost': 0, 'draw': 1, 'expected': [(0, 0, 0), (0, 0, 100)]},
+        {'enemy': True, 'win': 1, 'lost': 1, 'draw': 1, 'expected': [(0, 0, 0), (33, 33, 33)]},
+        {'enemy': True, 'win': 10, 'lost': 5, 'draw': 5, 'expected': [(0, 0, 0), (50, 25, 25)]},
+    )
+    def test_progress(self, enemy, win, lost, draw, expected):
+        expected_result = {
+            'ai': 'Wins: {}%; Losts: {}%; Draws: {}%'.format(*expected[0]),
+            'enemy': 'Wins: {}%; Losts: {}%; Draws: {}%'.format(*expected[1])
+        }
+        url = reverse('game:update_progress')
+        payload = {
+            'progress': json.dumps(
+                {
+                    'enemy': enemy,
+                    'wins': {
+                        'win': win, 'lost': lost, 'draw': draw
+                    },
+                })
+        }
+        response = self.client.post(url, data=payload)
+        data = json.loads(response.content)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(data, expected_result)

@@ -1,6 +1,7 @@
 import json
 from logging import getLogger
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.core.cache import cache
@@ -12,7 +13,6 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from config.settings import TTT_WAIT_TIME
 from game.forms import AuthForm
 from game.models import Progress
 
@@ -24,7 +24,7 @@ def index(request):
     """
     View for the index page.
     """
-    return render(request, 'game/index.html', {'url': reverse('game:room_to_play'), 'latency': TTT_WAIT_TIME})
+    return render(request, 'game/index.html', {'url': reverse('game:room_to_play'), 'latency': settings.TTT_WAIT_TIME})
 
 
 @login_required
@@ -36,7 +36,7 @@ def desk(request, desk_name):
     """
     context = {
         'desk_name_json': mark_safe(json.dumps(desk_name)),
-        'latency': TTT_WAIT_TIME,  # time in seconds player is waiting for the opponent.
+        'latency': settings.TTT_WAIT_TIME,  # time in seconds player is waiting for the opponent.
         'username': request.user.username,
         'url': reverse('game:update_progress'),
     }
@@ -54,7 +54,7 @@ def room(request):
 
     if not room_id:
         room_id = get_random_string(length=10)
-        cache.set('game_room', room_id, TTT_WAIT_TIME)
+        cache.set('game_room', room_id, settings.TTT_WAIT_TIME)
     else:
         cache.delete('game_room')
     log.debug(f"The room id is: {room_id}")

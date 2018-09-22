@@ -4,11 +4,16 @@ Django settings for config project.
 
 from os.path import abspath, basename, dirname, join, normpath
 
+try:
+    from . import secure
+except ImportError:
+    from . import secure_example as secure
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = dirname(dirname(__file__))
+BASE_DIR = dirname(dirname(dirname(__file__)))
 
 # Absolute filesystem path to the Django project config directory:
-DJANGO_PROJECT_CONFIG = dirname(abspath(__file__))
+DJANGO_PROJECT_CONFIG = dirname(dirname(abspath(__file__)))
 
 SITE_ROOT = dirname(DJANGO_PROJECT_CONFIG)
 
@@ -81,16 +86,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ttt_db',
-        'USER': 'ttt',
-        'HOST': 'postgres',
-        'PASSWORD': 'tic-tac-toe',
-        'PORT': 5432,
-    }
-}
+DATABASES = secure.DATABASE
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
