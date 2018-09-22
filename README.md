@@ -1,6 +1,7 @@
 # Tic Tac Toe
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/4e167b0f5d284864f81e/maintainability)](https://codeclimate.com/github/idegtiarov/ttt-wg/maintainability)
+[![Build Status](https://travis-ci.org/idegtiarov/ttt-wg.svg?branch=master)](https://travis-ci.org/idegtiarov/ttt-wg)
 
 
 ## About
@@ -50,5 +51,7 @@ set to 5 seconds.
         > tox -e flake8
         > tox -e pytest
 
- Note: To run `pytest` tests block docker containers with redis and database
- should be started.
+ Note: To run `pytest` tests block localy:
+  - docker containers with redis and database should be started.
+  - `secure.py` file should be added to the `config.settings` it could be the
+  same as `secure_example.py`.
